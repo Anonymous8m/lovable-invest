@@ -5,6 +5,8 @@ import {
   Layers,
   User,
   LogOut,
+  ArrowDownToLine,
+  ArrowUpFromLine,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -24,6 +26,8 @@ import {
 
 const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Deposit", url: "/dashboard/deposit", icon: ArrowDownToLine },
+  { title: "Withdraw", url: "/dashboard/withdraw", icon: ArrowUpFromLine },
   { title: "Transactions", url: "/dashboard/transactions", icon: ArrowLeftRight },
   { title: "Investment", url: "/dashboard/invest", icon: TrendingUp },
   { title: "Our Plans", url: "/dashboard/plans", icon: Layers },

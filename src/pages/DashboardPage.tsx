@@ -82,7 +82,7 @@ const DashboardPage = () => {
 
         <div className="flex gap-3 pt-2">
           <Button className="flex-1 gap-2" asChild>
-            <Link to="/dashboard/transactions">
+            <Link to="/dashboard/deposit">
               Deposit <ArrowRight className="w-4 h-4" />
             </Link>
           </Button>
