@@ -14,6 +14,8 @@ import TransactionsPage from "./pages/TransactionsPage";
 import InvestmentPage from "./pages/InvestmentPage";
 import PlansPage from "./pages/PlansPage";
 import ProfilePage from "./pages/ProfilePage";
+import DepositPage from "./pages/DepositPage";
+import WithdrawPage from "./pages/WithdrawPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
