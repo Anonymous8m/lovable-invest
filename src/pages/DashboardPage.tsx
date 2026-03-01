@@ -1,138 +1,161 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useInvestments } from "@/contexts/InvestmentContext";
 import { motion } from "framer-motion";
-import { Wallet, ArrowDownToLine, ArrowUpFromLine, TrendingUp, ArrowRight } from "lucide-react";
+import { AlertTriangle, Info, ArrowRight, Wallet, TrendingUp, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 import { Link } from "react-router-dom";
-
-const statCards = [
-  { key: "balance", label: "Available Balance", icon: Wallet, format: true, color: "text-primary" },
-  { key: "totalDeposit", label: "Total Deposit", icon: ArrowDownToLine, format: true, color: "text-success" },
-  { key: "totalWithdrawal", label: "Total Withdrawal", icon: ArrowUpFromLine, format: true, color: "text-warning" },
-];
+import { Button } from "@/components/ui/button";
 
 const DashboardPage = () => {
   const { user } = useAuth();
-  const { transactions, investments } = useInvestments();
+  const { investments } = useInvestments();
 
-  const recentTransactions = transactions.slice(0, 5);
+  const activeInvestmentTotal = investments
+    .filter((i) => i.status === "active")
+    .reduce((sum, i) => sum + i.amount, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 max-w-2xl mx-auto">
+      {/* Welcome */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-2xl lg:text-3xl font-display font-bold text-foreground">
-          Welcome, <span className="text-gradient">{user?.username}</span>
+        <p className="text-sm text-muted-foreground">Welcome!</p>
+        <h1 className="text-2xl lg:text-3xl font-display font-bold text-foreground mt-1">
+          {user?.fullName}
         </h1>
-        <p className="text-muted-foreground mt-1">Here's your portfolio overview</p>
+        <p className="text-muted-foreground text-sm mt-1">Here's a summary of your account. Have fun!</p>
       </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {statCards.map((card, i) => {
-          const value = user?.[card.key as keyof typeof user] as number;
-          return (
-            <motion.div
-              key={card.key}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              className="card-elevated rounded-xl p-6 border border-border"
-            >
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{card.label}</p>
-                  <p className="text-2xl font-display font-bold text-foreground mt-2">
-                    ${value?.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className={`w-10 h-10 rounded-lg bg-muted flex items-center justify-center ${card.color}`}>
-                  <card.icon className="w-5 h-5" />
-                </div>
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
+      {/* Alert Banners */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="rounded-xl border-2 border-accent/40 bg-accent/5 p-4 flex items-start gap-3"
+      >
+        <AlertTriangle className="w-5 h-5 text-accent mt-0.5 shrink-0" />
+        <div>
+          <p className="text-sm text-foreground">Add an account that you'd like to receive payment or withdraw fund.</p>
+          <Button variant="default" size="sm" className="mt-3 bg-accent text-accent-foreground hover:bg-accent/90">
+            Add Account
+          </Button>
+        </div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Active Investments */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="card-elevated rounded-xl border border-border p-6"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display font-semibold text-foreground">Active Investments</h2>
-            <Link to="/dashboard/invest" className="text-sm text-primary hover:underline flex items-center gap-1">
-              View all <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-          {investments.filter((i) => i.status === "active").length === 0 ? (
-            <p className="text-muted-foreground text-sm">No active investments</p>
-          ) : (
-            <div className="space-y-3">
-              {investments
-                .filter((i) => i.status === "active")
-                .map((inv) => (
-                  <div key={inv.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <TrendingUp className="w-4 h-4 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{inv.planName}</p>
-                        <p className="text-xs text-muted-foreground">{inv.duration} · {inv.roi}% ROI</p>
-                      </div>
-                    </div>
-                    <p className="text-sm font-semibold text-foreground">${inv.amount.toLocaleString()}</p>
-                  </div>
-                ))}
-            </div>
-          )}
-        </motion.div>
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className="rounded-xl border border-info/30 bg-info/5 p-4 flex items-start gap-3"
+      >
+        <Info className="w-5 h-5 text-info mt-0.5 shrink-0" />
+        <div>
+          <p className="text-sm text-foreground">Update your account information from your profile to complete account setup.</p>
+          <Link to="/dashboard/profile" className="text-sm text-info hover:underline mt-1 inline-block font-medium">
+            Update Profile
+          </Link>
+        </div>
+      </motion.div>
 
-        {/* Recent Transactions */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="card-elevated rounded-xl border border-border p-6"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display font-semibold text-foreground">Recent Transactions</h2>
-            <Link to="/dashboard/transactions" className="text-sm text-primary hover:underline flex items-center gap-1">
-              View all <ArrowRight className="w-3 h-3" />
+      {/* Available Balance Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="card-elevated rounded-xl border border-border p-5 space-y-4"
+      >
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">Available Balance</p>
+          <Wallet className="w-4 h-4 text-muted-foreground" />
+        </div>
+        <p className="text-3xl font-display font-bold text-foreground">
+          {user?.balance?.toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-lg font-normal text-muted-foreground">USD</span>
+        </p>
+
+        <div className="border-t border-border pt-4">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Investment Account</p>
+            <TrendingUp className="w-4 h-4 text-muted-foreground" />
+          </div>
+          <p className="text-xl font-display font-bold text-foreground">
+            {activeInvestmentTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-sm font-normal text-muted-foreground">USD</span>
+          </p>
+        </div>
+
+        <div className="flex gap-3 pt-2">
+          <Button className="flex-1 gap-2" asChild>
+            <Link to="/dashboard/transactions">
+              Deposit <ArrowRight className="w-4 h-4" />
             </Link>
-          </div>
-          <div className="space-y-3">
-            {recentTransactions.map((tx) => (
-              <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                    tx.type === "deposit" ? "bg-success/10" : tx.type === "withdrawal" ? "bg-warning/10" : "bg-info/10"
-                  }`}>
-                    {tx.type === "deposit" ? (
-                      <ArrowDownToLine className="w-4 h-4 text-success" />
-                    ) : tx.type === "withdrawal" ? (
-                      <ArrowUpFromLine className="w-4 h-4 text-warning" />
-                    ) : (
-                      <TrendingUp className="w-4 h-4 text-info" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{tx.description}</p>
-                    <p className="text-xs text-muted-foreground">{tx.date}</p>
-                  </div>
-                </div>
-                <p className={`text-sm font-semibold ${
-                  tx.type === "deposit" ? "text-success" : tx.type === "withdrawal" ? "text-warning" : "text-info"
-                }`}>
-                  {tx.type === "withdrawal" ? "-" : "+"}${tx.amount.toLocaleString()}
-                </p>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      </div>
+          </Button>
+          <Button variant="secondary" className="flex-1" asChild>
+            <Link to="/dashboard/invest">Invest & Earn</Link>
+          </Button>
+        </div>
+      </motion.div>
+
+      {/* Total Deposit Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.25 }}
+        className="card-elevated rounded-xl border border-border p-5 space-y-2"
+      >
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">Total Deposit</p>
+          <ArrowDownToLine className="w-4 h-4 text-muted-foreground" />
+        </div>
+        <p className="text-2xl font-display font-bold text-foreground">
+          {user?.totalDeposit?.toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-sm font-normal text-muted-foreground">USD</span>
+        </p>
+        <div className="pt-1">
+          <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">This Month</p>
+          <p className="text-sm font-medium text-foreground mt-0.5">
+            {user?.totalDeposit?.toLocaleString("en-US", { minimumFractionDigits: 2 })} USD
+          </p>
+        </div>
+        <div className="h-1 rounded-full bg-primary/30 mt-2">
+          <div className="h-full rounded-full bg-primary" style={{ width: "60%" }} />
+        </div>
+      </motion.div>
+
+      {/* Total Withdrawal Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="card-elevated rounded-xl border border-border p-5 space-y-2"
+      >
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">Total Withdraw</p>
+          <ArrowUpFromLine className="w-4 h-4 text-muted-foreground" />
+        </div>
+        <p className="text-2xl font-display font-bold text-foreground">
+          {user?.totalWithdrawal?.toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-sm font-normal text-muted-foreground">USD</span>
+        </p>
+        <div className="pt-1">
+          <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">This Month</p>
+          <p className="text-sm font-medium text-foreground mt-0.5">
+            {user?.totalWithdrawal?.toLocaleString("en-US", { minimumFractionDigits: 2 })} USD
+          </p>
+        </div>
+        <div className="h-1 rounded-full bg-accent/30 mt-2">
+          <div className="h-full rounded-full bg-accent" style={{ width: "40%" }} />
+        </div>
+      </motion.div>
+
+      {/* Footer */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.35 }}
+        className="text-center pt-4 pb-6 space-y-2"
+      >
+        <p className="text-xs text-muted-foreground">InvestFlow © 2026. All Rights Reserved.</p>
+        <div className="flex items-center justify-center gap-4 text-xs">
+          <a href="#" className="text-primary hover:underline">FAQs</a>
+          <a href="#" className="text-primary hover:underline">Terms and Condition</a>
+          <a href="#" className="text-primary hover:underline">Privacy</a>
+        </div>
+      </motion.div>
     </div>
   );
 };
