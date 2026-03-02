@@ -8,21 +8,27 @@ import { TrendingUp, Eye, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
 
 const LoginPage = () => {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!username.trim() || !password.trim()) {
+    if (!email.trim() || !password.trim()) {
       setError("Please fill in all fields");
       return;
     }
-    if (login(username, password)) {
+    setLoading(true);
+    const result = await login(email, password);
+    setLoading(false);
+    if (result.error) {
+      setError(result.error);
+    } else {
       navigate("/dashboard");
     }
   };
@@ -55,12 +61,13 @@ const LoginPage = () => {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="username">Username or Email</Label>
+              <Label htmlFor="email">Email Address</Label>
               <Input
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your username"
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
                 className="bg-muted border-border"
               />
             </div>
@@ -96,8 +103,8 @@ const LoginPage = () => {
               </button>
             </div>
 
-            <Button type="submit" className="w-full glow-primary" size="lg">
-              Sign In
+            <Button type="submit" className="w-full glow-primary" size="lg" disabled={loading}>
+              {loading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
 

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const PAYMENT_METHODS = [
   { id: "bank", label: "Bank Transfer" },
@@ -15,7 +16,7 @@ const PAYMENT_METHODS = [
 ];
 
 const DepositPage = () => {
-  const { user, updateUser } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const { addTransaction } = useInvestments();
   const { toast } = useToast();
   const [amount, setAmount] = useState("");
@@ -25,7 +26,7 @@ const DepositPage = () => {
 
   const presetAmounts = [100, 500, 1000, 5000];
 
-  const handleDeposit = () => {
+  const handleDeposit = async () => {
     const depositAmount = parseFloat(amount);
     if (!depositAmount || depositAmount <= 0) {
       toast({ title: "Invalid amount", description: "Please enter a valid deposit amount.", variant: "destructive" });
@@ -35,24 +36,31 @@ const DepositPage = () => {
       toast({ title: "Limit exceeded", description: "Maximum single deposit is $100,000.", variant: "destructive" });
       return;
     }
+    if (!user) return;
 
     setLoading(true);
-    setTimeout(() => {
-      updateUser({
-        balance: (user?.balance ?? 0) + depositAmount,
-        totalDeposit: (user?.totalDeposit ?? 0) + depositAmount,
-      });
-      addTransaction({
-        type: "deposit",
-        amount: depositAmount,
-        description: `Deposit via ${PAYMENT_METHODS.find((m) => m.id === method)?.label}`,
-        status: "completed",
-        date: new Date().toISOString().split("T")[0],
-      });
-      toast({ title: "Deposit successful", description: `$${depositAmount.toLocaleString()} has been added to your balance.` });
-      setAmount("");
-      setLoading(false);
-    }, 1200);
+
+    // Update balance in DB
+    await supabase
+      .from("profiles")
+      .update({
+        balance: (user.balance ?? 0) + depositAmount,
+        total_deposit: (user.total_deposit ?? 0) + depositAmount,
+      })
+      .eq("id", user.id);
+
+    await addTransaction({
+      type: "deposit",
+      amount: depositAmount,
+      description: `Deposit via ${PAYMENT_METHODS.find((m) => m.id === method)?.label}`,
+      status: "completed",
+      date: new Date().toISOString().split("T")[0],
+    });
+
+    await refreshProfile();
+    toast({ title: "Deposit successful", description: `$${depositAmount.toLocaleString()} has been added to your balance.` });
+    setAmount("");
+    setLoading(false);
   };
 
   const handleCopy = (text: string) => {
@@ -83,7 +91,7 @@ const DepositPage = () => {
         <div>
           <p className="text-sm text-muted-foreground">Current Balance</p>
           <p className="text-2xl font-display font-bold text-foreground">
-            ${user?.balance?.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+            ${(user?.balance ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
           </p>
         </div>
       </motion.div>
@@ -95,7 +103,6 @@ const DepositPage = () => {
         transition={{ delay: 0.15 }}
         className="card-elevated rounded-xl border border-border p-6 space-y-5"
       >
-        {/* Payment Method */}
         <div className="space-y-2">
           <Label className="text-sm text-muted-foreground">Payment Method</Label>
           <div className="grid grid-cols-3 gap-2">
@@ -115,7 +122,6 @@ const DepositPage = () => {
           </div>
         </div>
 
-        {/* Amount */}
         <div className="space-y-2">
           <Label className="text-sm text-muted-foreground">Amount (USD)</Label>
           <Input
@@ -140,7 +146,6 @@ const DepositPage = () => {
           </div>
         </div>
 
-        {/* Payment Details (mock) */}
         {method === "bank" && (
           <div className="space-y-2 rounded-lg bg-muted/40 p-4 border border-border">
             <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Bank Details</p>

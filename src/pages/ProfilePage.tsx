@@ -6,28 +6,44 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { toast } from "sonner";
 import { User, Mail, Phone, Lock, Camera } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const ProfilePage = () => {
-  const { user, updateUser } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const [form, setForm] = useState({
-    fullName: user?.fullName || "",
+    full_name: user?.full_name || "",
     email: user?.email || "",
     phone: user?.phone || "",
     username: user?.username || "",
   });
   const [passwordForm, setPasswordForm] = useState({
-    current: "",
     newPassword: "",
     confirm: "",
   });
+  const [saving, setSaving] = useState(false);
 
-  const handleUpdateProfile = (e: React.FormEvent) => {
+  const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateUser(form);
-    toast.success("Profile updated successfully");
+    if (!user) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        full_name: form.full_name,
+        phone: form.phone,
+        username: form.username,
+      })
+      .eq("id", user.id);
+    setSaving(false);
+    if (error) {
+      toast.error("Failed to update profile");
+    } else {
+      await refreshProfile();
+      toast.success("Profile updated successfully");
+    }
   };
 
-  const handleChangePassword = (e: React.FormEvent) => {
+  const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (passwordForm.newPassword.length < 6) {
       toast.error("Password must be at least 6 characters");
@@ -37,8 +53,13 @@ const ProfilePage = () => {
       toast.error("Passwords do not match");
       return;
     }
-    toast.success("Password changed successfully");
-    setPasswordForm({ current: "", newPassword: "", confirm: "" });
+    const { error } = await supabase.auth.updateUser({ password: passwordForm.newPassword });
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Password changed successfully");
+      setPasswordForm({ newPassword: "", confirm: "" });
+    }
   };
 
   return (
@@ -57,14 +78,14 @@ const ProfilePage = () => {
       >
         <div className="relative">
           <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center text-primary text-2xl font-display font-bold">
-            {user?.fullName?.charAt(0) || "U"}
+            {user?.full_name?.charAt(0) || "U"}
           </div>
           <button className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground hover:opacity-90 transition">
             <Camera className="w-4 h-4" />
           </button>
         </div>
         <div>
-          <h2 className="text-lg font-display font-semibold text-foreground">{user?.fullName}</h2>
+          <h2 className="text-lg font-display font-semibold text-foreground">{user?.full_name}</h2>
           <p className="text-muted-foreground text-sm">@{user?.username}</p>
         </div>
       </motion.div>
@@ -81,7 +102,7 @@ const ProfilePage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="flex items-center gap-2"><User className="w-3.5 h-3.5" /> Full Name</Label>
-              <Input value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} className="bg-muted border-border" />
+              <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} className="bg-muted border-border" />
             </div>
             <div className="space-y-2">
               <Label className="flex items-center gap-2"><User className="w-3.5 h-3.5" /> Username</Label>
@@ -89,14 +110,16 @@ const ProfilePage = () => {
             </div>
             <div className="space-y-2">
               <Label className="flex items-center gap-2"><Mail className="w-3.5 h-3.5" /> Email</Label>
-              <Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="bg-muted border-border" />
+              <Input value={form.email} disabled className="bg-muted border-border opacity-60" />
             </div>
             <div className="space-y-2">
               <Label className="flex items-center gap-2"><Phone className="w-3.5 h-3.5" /> Phone</Label>
               <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="bg-muted border-border" />
             </div>
           </div>
-          <Button type="submit" className="glow-primary">Save Changes</Button>
+          <Button type="submit" className="glow-primary" disabled={saving}>
+            {saving ? "Saving..." : "Save Changes"}
+          </Button>
         </form>
       </motion.div>
 
@@ -111,10 +134,6 @@ const ProfilePage = () => {
           <Lock className="w-4 h-4" /> Change Password
         </h2>
         <form onSubmit={handleChangePassword} className="space-y-4">
-          <div className="space-y-2">
-            <Label>Current Password</Label>
-            <Input type="password" value={passwordForm.current} onChange={(e) => setPasswordForm({ ...passwordForm, current: e.target.value })} className="bg-muted border-border" />
-          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>New Password</Label>
