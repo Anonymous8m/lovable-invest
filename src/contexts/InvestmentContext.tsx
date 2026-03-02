@@ -1,62 +1,111 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "./AuthContext";
 
 export interface Transaction {
   id: string;
-  type: "deposit" | "withdrawal" | "investment";
+  type: string;
   amount: number;
   description: string;
-  status: "completed" | "pending" | "failed";
+  status: string;
   date: string;
 }
 
 export interface Investment {
   id: string;
-  planName: string;
+  plan_name: string;
   amount: number;
   roi: number;
   duration: string;
-  startDate: string;
-  status: "active" | "completed" | "pending";
+  start_date: string;
+  status: string;
 }
 
 interface InvestmentContextType {
   transactions: Transaction[];
   investments: Investment[];
-  addTransaction: (t: Omit<Transaction, "id">) => void;
-  addInvestment: (i: Omit<Investment, "id">) => void;
+  loadingTransactions: boolean;
+  loadingInvestments: boolean;
+  addTransaction: (t: Omit<Transaction, "id">) => Promise<void>;
+  addInvestment: (i: Omit<Investment, "id">) => Promise<void>;
+  refreshData: () => Promise<void>;
 }
-
-const MOCK_TRANSACTIONS: Transaction[] = [
-  { id: "1", type: "deposit", amount: 10000, description: "Initial Deposit", status: "completed", date: "2026-02-25" },
-  { id: "2", type: "deposit", amount: 15000, description: "Wire Transfer", status: "completed", date: "2026-02-26" },
-  { id: "3", type: "investment", amount: 5000, description: "Standard Plan Investment", status: "completed", date: "2026-02-27" },
-  { id: "4", type: "deposit", amount: 7000, description: "Bank Transfer", status: "completed", date: "2026-02-27" },
-  { id: "5", type: "withdrawal", amount: 3000, description: "Profit Withdrawal", status: "completed", date: "2026-02-28" },
-  { id: "6", type: "investment", amount: 8000, description: "Professional Plan Investment", status: "active" as any, date: "2026-02-28" },
-  { id: "7", type: "withdrawal", amount: 4150, description: "Withdrawal to Bank", status: "pending", date: "2026-03-01" },
-];
-
-const MOCK_INVESTMENTS: Investment[] = [
-  { id: "1", planName: "Standard Plan", amount: 5000, roi: 12, duration: "30 days", startDate: "2026-02-27", status: "active" },
-  { id: "2", planName: "Professional Plan", amount: 8000, roi: 18, duration: "60 days", startDate: "2026-02-28", status: "active" },
-];
 
 const InvestmentContext = createContext<InvestmentContextType | null>(null);
 
 export function InvestmentProvider({ children }: { children: ReactNode }) {
-  const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
-  const [investments, setInvestments] = useState<Investment[]>(MOCK_INVESTMENTS);
+  const { session } = useAuth();
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [investments, setInvestments] = useState<Investment[]>([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
+  const [loadingInvestments, setLoadingInvestments] = useState(false);
 
-  const addTransaction = (t: Omit<Transaction, "id">) => {
-    setTransactions((prev) => [{ ...t, id: crypto.randomUUID() }, ...prev]);
+  const fetchTransactions = useCallback(async () => {
+    if (!session?.user) return;
+    setLoadingTransactions(true);
+    const { data } = await supabase
+      .from("transactions")
+      .select("id, type, amount, description, status, date")
+      .eq("user_id", session.user.id)
+      .order("date", { ascending: false });
+    if (data) setTransactions(data);
+    setLoadingTransactions(false);
+  }, [session?.user?.id]);
+
+  const fetchInvestments = useCallback(async () => {
+    if (!session?.user) return;
+    setLoadingInvestments(true);
+    const { data } = await supabase
+      .from("user_investments")
+      .select("id, plan_name, amount, roi, duration, start_date, status")
+      .eq("user_id", session.user.id)
+      .order("created_at", { ascending: false });
+    if (data) setInvestments(data);
+    setLoadingInvestments(false);
+  }, [session?.user?.id]);
+
+  const refreshData = useCallback(async () => {
+    await Promise.all([fetchTransactions(), fetchInvestments()]);
+  }, [fetchTransactions, fetchInvestments]);
+
+  useEffect(() => {
+    if (session?.user) {
+      refreshData();
+    } else {
+      setTransactions([]);
+      setInvestments([]);
+    }
+  }, [session?.user?.id, refreshData]);
+
+  const addTransaction = async (t: Omit<Transaction, "id">) => {
+    if (!session?.user) return;
+    await supabase.from("transactions").insert({
+      user_id: session.user.id,
+      type: t.type,
+      amount: t.amount,
+      description: t.description,
+      status: t.status,
+      date: t.date,
+    });
+    await fetchTransactions();
   };
 
-  const addInvestment = (i: Omit<Investment, "id">) => {
-    setInvestments((prev) => [{ ...i, id: crypto.randomUUID() }, ...prev]);
+  const addInvestment = async (i: Omit<Investment, "id">) => {
+    if (!session?.user) return;
+    await supabase.from("user_investments").insert({
+      user_id: session.user.id,
+      plan_name: i.plan_name,
+      amount: i.amount,
+      roi: i.roi,
+      duration: i.duration,
+      start_date: i.start_date,
+      status: i.status,
+    });
+    await fetchInvestments();
   };
 
   return (
-    <InvestmentContext.Provider value={{ transactions, investments, addTransaction, addInvestment }}>
+    <InvestmentContext.Provider value={{ transactions, investments, loadingTransactions, loadingInvestments, addTransaction, addInvestment, refreshData }}>
       {children}
     </InvestmentContext.Provider>
   );
