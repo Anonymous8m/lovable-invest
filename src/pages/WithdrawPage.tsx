@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const WithdrawPage = () => {
-  const { user, updateUser } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const { addTransaction } = useInvestments();
   const { toast } = useToast();
   const [amount, setAmount] = useState("");
@@ -19,7 +20,7 @@ const WithdrawPage = () => {
 
   const balance = user?.balance ?? 0;
 
-  const handleWithdraw = () => {
+  const handleWithdraw = async () => {
     const withdrawAmount = parseFloat(amount);
     if (!withdrawAmount || withdrawAmount <= 0) {
       toast({ title: "Invalid amount", description: "Please enter a valid withdrawal amount.", variant: "destructive" });
@@ -41,26 +42,32 @@ const WithdrawPage = () => {
       toast({ title: "Invalid input", description: "Account details are too long.", variant: "destructive" });
       return;
     }
+    if (!user) return;
 
     setLoading(true);
-    setTimeout(() => {
-      updateUser({
+
+    await supabase
+      .from("profiles")
+      .update({
         balance: balance - withdrawAmount,
-        totalWithdrawal: (user?.totalWithdrawal ?? 0) + withdrawAmount,
-      });
-      addTransaction({
-        type: "withdrawal",
-        amount: withdrawAmount,
-        description: `Withdrawal to ${accountName.trim()}`,
-        status: "pending",
-        date: new Date().toISOString().split("T")[0],
-      });
-      toast({ title: "Withdrawal submitted", description: `$${withdrawAmount.toLocaleString()} withdrawal is pending approval.` });
-      setAmount("");
-      setAccountName("");
-      setAccountNumber("");
-      setLoading(false);
-    }, 1200);
+        total_withdrawal: (user.total_withdrawal ?? 0) + withdrawAmount,
+      })
+      .eq("id", user.id);
+
+    await addTransaction({
+      type: "withdrawal",
+      amount: withdrawAmount,
+      description: `Withdrawal to ${accountName.trim()}`,
+      status: "pending",
+      date: new Date().toISOString().split("T")[0],
+    });
+
+    await refreshProfile();
+    toast({ title: "Withdrawal submitted", description: `$${withdrawAmount.toLocaleString()} withdrawal is pending approval.` });
+    setAmount("");
+    setAccountName("");
+    setAccountNumber("");
+    setLoading(false);
   };
 
   return (
@@ -72,7 +79,6 @@ const WithdrawPage = () => {
         <p className="text-muted-foreground text-sm mt-1">Cash out your profits to your bank account</p>
       </motion.div>
 
-      {/* Current Balance */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -101,7 +107,6 @@ const WithdrawPage = () => {
         </motion.div>
       )}
 
-      {/* Withdrawal Form */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}

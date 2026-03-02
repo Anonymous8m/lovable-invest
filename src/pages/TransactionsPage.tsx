@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 
 const TransactionsPage = () => {
-  const { transactions } = useInvestments();
+  const { transactions, loadingTransactions } = useInvestments();
   const [filter, setFilter] = useState<string>("all");
 
   const filtered = filter === "all" ? transactions : transactions.filter((t) => t.type === filter);
@@ -17,6 +17,14 @@ const TransactionsPage = () => {
   };
 
   const filters = ["all", "deposit", "withdrawal", "investment"];
+
+  if (loadingTransactions) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <p className="text-muted-foreground">Loading transactions...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -59,6 +67,11 @@ const TransactionsPage = () => {
               </tr>
             </thead>
             <tbody>
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="p-8 text-center text-muted-foreground">No transactions yet</td>
+                </tr>
+              )}
               {filtered.map((tx, i) => (
                 <motion.tr
                   key={tx.id}
@@ -91,7 +104,7 @@ const TransactionsPage = () => {
                       {tx.status}
                     </Badge>
                   </td>
-                  <td className="p-4 text-sm text-muted-foreground">{tx.date}</td>
+                  <td className="p-4 text-sm text-muted-foreground">{tx.date?.split("T")[0]}</td>
                 </motion.tr>
               ))}
             </tbody>

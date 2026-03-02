@@ -6,12 +6,20 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Bell, Search } from "lucide-react";
 
 const DashboardLayout = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isAuthenticated) navigate("/login");
-  }, [isAuthenticated, navigate]);
+    if (!loading && !isAuthenticated) navigate("/login");
+  }, [isAuthenticated, loading, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) return null;
 
@@ -37,7 +45,7 @@ const DashboardLayout = () => {
                 <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
               </button>
               <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm">
-                {user?.fullName?.charAt(0) || "U"}
+                {user?.full_name?.charAt(0) || "U"}
               </div>
             </div>
           </header>

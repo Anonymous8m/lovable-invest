@@ -19,7 +19,7 @@ const DashboardPage = () => {
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         <p className="text-sm text-muted-foreground">Welcome!</p>
         <h1 className="text-2xl lg:text-3xl font-display font-bold text-foreground mt-1">
-          {user?.fullName}
+          {user?.full_name}
         </h1>
         <p className="text-muted-foreground text-sm mt-1">Here's a summary of your account. Have fun!</p>
       </motion.div>
@@ -67,7 +67,7 @@ const DashboardPage = () => {
           <Wallet className="w-4 h-4 text-muted-foreground" />
         </div>
         <p className="text-3xl font-display font-bold text-foreground">
-          {user?.balance?.toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-lg font-normal text-muted-foreground">USD</span>
+          {(user?.balance ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-lg font-normal text-muted-foreground">USD</span>
         </p>
 
         <div className="border-t border-border pt-4">
@@ -104,12 +104,12 @@ const DashboardPage = () => {
           <ArrowDownToLine className="w-4 h-4 text-muted-foreground" />
         </div>
         <p className="text-2xl font-display font-bold text-foreground">
-          {user?.totalDeposit?.toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-sm font-normal text-muted-foreground">USD</span>
+          {(user?.total_deposit ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-sm font-normal text-muted-foreground">USD</span>
         </p>
         <div className="pt-1">
           <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">This Month</p>
           <p className="text-sm font-medium text-foreground mt-0.5">
-            {user?.totalDeposit?.toLocaleString("en-US", { minimumFractionDigits: 2 })} USD
+            {(user?.total_deposit ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} USD
           </p>
         </div>
         <div className="h-1 rounded-full bg-primary/30 mt-2">
@@ -129,12 +129,12 @@ const DashboardPage = () => {
           <ArrowUpFromLine className="w-4 h-4 text-muted-foreground" />
         </div>
         <p className="text-2xl font-display font-bold text-foreground">
-          {user?.totalWithdrawal?.toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-sm font-normal text-muted-foreground">USD</span>
+          {(user?.total_withdrawal ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-sm font-normal text-muted-foreground">USD</span>
         </p>
         <div className="pt-1">
           <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">This Month</p>
           <p className="text-sm font-medium text-foreground mt-0.5">
-            {user?.totalWithdrawal?.toLocaleString("en-US", { minimumFractionDigits: 2 })} USD
+            {(user?.total_withdrawal ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} USD
           </p>
         </div>
         <div className="h-1 rounded-full bg-accent/30 mt-2">

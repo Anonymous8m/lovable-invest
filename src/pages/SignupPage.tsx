@@ -18,6 +18,8 @@ const SignupPage = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+  const [signupError, setSignupError] = useState("");
   const { signup } = useAuth();
   const navigate = useNavigate();
 
@@ -32,12 +34,26 @@ const SignupPage = () => {
     return errs;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSignupError("");
     const errs = validate();
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
-    if (signup({ ...form })) {
+    
+    setLoading(true);
+    const result = await signup({
+      fullName: form.fullName,
+      email: form.email,
+      phone: form.phone,
+      username: form.username,
+      password: form.password,
+    });
+    setLoading(false);
+    
+    if (result.error) {
+      setSignupError(result.error);
+    } else {
       navigate("/dashboard");
     }
   };
@@ -75,6 +91,12 @@ const SignupPage = () => {
 
         <div className="card-elevated rounded-xl p-8 border border-border">
           <form onSubmit={handleSubmit} className="space-y-4">
+            {signupError && (
+              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+                {signupError}
+              </div>
+            )}
+
             {fields.map((f) => (
               <div key={f.key} className="space-y-1.5">
                 <Label htmlFor={f.key}>{f.label}</Label>
@@ -125,8 +147,8 @@ const SignupPage = () => {
               {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword}</p>}
             </div>
 
-            <Button type="submit" className="w-full glow-primary" size="lg">
-              Create Account
+            <Button type="submit" className="w-full glow-primary" size="lg" disabled={loading}>
+              {loading ? "Creating Account..." : "Create Account"}
             </Button>
           </form>
 

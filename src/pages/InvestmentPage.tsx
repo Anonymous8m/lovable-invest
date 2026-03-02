@@ -4,41 +4,52 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Clock, DollarSign, Percent } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const plans = [
-  { name: "Standard Plan", min: 500, max: 10000, roi: 12, duration: "30 days", color: "from-primary/20 to-primary/5" },
-  { name: "Professional Plan", min: 5000, max: 50000, roi: 18, duration: "60 days", color: "from-info/20 to-info/5" },
-  { name: "Jupiter Plan", min: 10000, max: 100000, roi: 25, duration: "90 days", color: "from-warning/20 to-warning/5" },
-  { name: "Mercury Plan", min: 25000, max: 500000, roi: 35, duration: "120 days", color: "from-destructive/20 to-destructive/5" },
+  { name: "Standard Plan", min: 100, max: 5000, roi: 12, duration: "30 days", color: "from-primary/20 to-primary/5" },
+  { name: "Professional Plan", min: 5000, max: 25000, roi: 18, duration: "60 days", color: "from-info/20 to-info/5" },
+  { name: "Jupiter Plan", min: 25000, max: 100000, roi: 25, duration: "90 days", color: "from-warning/20 to-warning/5" },
+  { name: "Mercury Plan", min: 100000, max: 500000, roi: 35, duration: "120 days", color: "from-destructive/20 to-destructive/5" },
 ];
 
 const InvestmentPage = () => {
-  const { user, updateBalance } = useAuth();
+  const { user, session, refreshProfile } = useAuth();
   const { addInvestment, addTransaction, investments } = useInvestments();
 
-  const handleInvest = (plan: typeof plans[0]) => {
-    if (!user || user.balance < plan.min) {
+  const handleInvest = async (plan: typeof plans[0]) => {
+    if (!user || !session) return;
+    if (user.balance < plan.min) {
       toast.error("Insufficient balance for this plan");
       return;
     }
 
     const amount = plan.min;
-    updateBalance(amount);
-    addInvestment({
-      planName: plan.name,
+
+    // Deduct balance
+    await supabase
+      .from("profiles")
+      .update({ balance: user.balance - amount })
+      .eq("id", user.id);
+
+    await addInvestment({
+      plan_name: plan.name,
       amount,
       roi: plan.roi,
       duration: plan.duration,
-      startDate: new Date().toISOString().split("T")[0],
+      start_date: new Date().toISOString().split("T")[0],
       status: "active",
     });
-    addTransaction({
+
+    await addTransaction({
       type: "investment",
       amount,
       description: `${plan.name} Investment`,
       status: "completed",
       date: new Date().toISOString().split("T")[0],
     });
+
+    await refreshProfile();
     toast.success(`Successfully invested $${amount.toLocaleString()} in ${plan.name}`);
   };
 
@@ -49,7 +60,6 @@ const InvestmentPage = () => {
         <p className="text-muted-foreground mt-1">Choose a plan that matches your investment goals</p>
       </motion.div>
 
-      {/* Active investments summary */}
       {investments.filter((i) => i.status === "active").length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -65,8 +75,8 @@ const InvestmentPage = () => {
                     <TrendingUp className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium text-foreground">{inv.planName}</p>
-                    <p className="text-xs text-muted-foreground">{inv.duration} · {inv.roi}% ROI · Started {inv.startDate}</p>
+                    <p className="font-medium text-foreground">{inv.plan_name}</p>
+                    <p className="text-xs text-muted-foreground">{inv.duration} · {inv.roi}% ROI · Started {inv.start_date}</p>
                   </div>
                 </div>
                 <p className="font-display font-bold text-foreground">${inv.amount.toLocaleString()}</p>
