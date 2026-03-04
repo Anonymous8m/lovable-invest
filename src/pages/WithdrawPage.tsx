@@ -9,16 +9,23 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
+const CRYPTO_NETWORKS = [
+  { id: "btc", label: "Bitcoin (BTC)" },
+  { id: "eth", label: "Ethereum (ETH)" },
+  { id: "usdt", label: "USDT (TRC20)" },
+];
+
 const WithdrawPage = () => {
   const { user, refreshProfile } = useAuth();
   const { addTransaction } = useInvestments();
   const { toast } = useToast();
   const [amount, setAmount] = useState("");
-  const [accountName, setAccountName] = useState("");
-  const [accountNumber, setAccountNumber] = useState("");
+  const [network, setNetwork] = useState("btc");
+  const [walletAddress, setWalletAddress] = useState("");
   const [loading, setLoading] = useState(false);
 
   const balance = user?.balance ?? 0;
+  const selectedNetwork = CRYPTO_NETWORKS.find((n) => n.id === network)!;
 
   const handleWithdraw = async () => {
     const withdrawAmount = parseFloat(amount);
@@ -34,12 +41,12 @@ const WithdrawPage = () => {
       toast({ title: "Limit exceeded", description: "Maximum single withdrawal is $50,000.", variant: "destructive" });
       return;
     }
-    if (!accountName.trim() || !accountNumber.trim()) {
-      toast({ title: "Missing details", description: "Please fill in your account name and number.", variant: "destructive" });
+    if (!walletAddress.trim()) {
+      toast({ title: "Missing wallet address", description: "Please enter your crypto wallet address.", variant: "destructive" });
       return;
     }
-    if (accountName.trim().length > 100 || accountNumber.trim().length > 30) {
-      toast({ title: "Invalid input", description: "Account details are too long.", variant: "destructive" });
+    if (walletAddress.trim().length < 10 || walletAddress.trim().length > 100) {
+      toast({ title: "Invalid address", description: "Please enter a valid wallet address.", variant: "destructive" });
       return;
     }
     if (!user) return;
@@ -57,7 +64,7 @@ const WithdrawPage = () => {
     await addTransaction({
       type: "withdrawal",
       amount: withdrawAmount,
-      description: `Withdrawal to ${accountName.trim()}`,
+      description: `Withdrawal via ${selectedNetwork.label} to ${walletAddress.trim().slice(0, 8)}...`,
       status: "pending",
       date: new Date().toISOString().split("T")[0],
     });
@@ -65,8 +72,7 @@ const WithdrawPage = () => {
     await refreshProfile();
     toast({ title: "Withdrawal submitted", description: `$${withdrawAmount.toLocaleString()} withdrawal is pending approval.` });
     setAmount("");
-    setAccountName("");
-    setAccountNumber("");
+    setWalletAddress("");
     setLoading(false);
   };
 
@@ -76,7 +82,7 @@ const WithdrawPage = () => {
         <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
           <ArrowUpFromLine className="w-6 h-6 text-accent" /> Withdraw Funds
         </h1>
-        <p className="text-muted-foreground text-sm mt-1">Cash out your profits to your bank account</p>
+        <p className="text-muted-foreground text-sm mt-1">Withdraw your profits to a cryptocurrency wallet</p>
       </motion.div>
 
       <motion.div
@@ -114,24 +120,32 @@ const WithdrawPage = () => {
         className="card-elevated rounded-xl border border-border p-6 space-y-5"
       >
         <div className="space-y-2">
-          <Label className="text-sm text-muted-foreground">Account Holder Name</Label>
-          <Input
-            placeholder="Enter account holder name"
-            value={accountName}
-            onChange={(e) => setAccountName(e.target.value)}
-            maxLength={100}
-            className="h-12"
-          />
+          <Label className="text-sm text-muted-foreground">Select Network</Label>
+          <div className="grid grid-cols-3 gap-2">
+            {CRYPTO_NETWORKS.map((n) => (
+              <button
+                key={n.id}
+                onClick={() => setNetwork(n.id)}
+                className={`rounded-lg border p-3 text-sm font-medium transition-all ${
+                  network === n.id
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-muted/30 text-muted-foreground hover:border-muted-foreground"
+                }`}
+              >
+                {n.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="space-y-2">
-          <Label className="text-sm text-muted-foreground">Account / Wallet Number</Label>
+          <Label className="text-sm text-muted-foreground">Wallet Address</Label>
           <Input
-            placeholder="Enter account or wallet number"
-            value={accountNumber}
-            onChange={(e) => setAccountNumber(e.target.value)}
-            maxLength={30}
-            className="h-12"
+            placeholder="Enter your wallet address"
+            value={walletAddress}
+            onChange={(e) => setWalletAddress(e.target.value)}
+            maxLength={100}
+            className="h-12 font-mono text-sm"
           />
         </div>
 

@@ -9,10 +9,10 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-const PAYMENT_METHODS = [
-  { id: "bank", label: "Bank Transfer" },
-  { id: "crypto", label: "Cryptocurrency" },
-  { id: "card", label: "Credit/Debit Card" },
+const CRYPTO_NETWORKS = [
+  { id: "btc", label: "Bitcoin (BTC)", address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh" },
+  { id: "eth", label: "Ethereum (ETH)", address: "0x1a2b3c4d5e6f7890abcdef1234567890abcdef12" },
+  { id: "usdt", label: "USDT (TRC20)", address: "TN2Y5Fv8h1rG8pK3aQzR1J9uXwEjKcL7Bm" },
 ];
 
 const DepositPage = () => {
@@ -20,11 +20,12 @@ const DepositPage = () => {
   const { addTransaction } = useInvestments();
   const { toast } = useToast();
   const [amount, setAmount] = useState("");
-  const [method, setMethod] = useState("bank");
+  const [network, setNetwork] = useState("btc");
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const presetAmounts = [100, 500, 1000, 5000];
+  const selectedNetwork = CRYPTO_NETWORKS.find((n) => n.id === network)!;
 
   const handleDeposit = async () => {
     const depositAmount = parseFloat(amount);
@@ -40,7 +41,6 @@ const DepositPage = () => {
 
     setLoading(true);
 
-    // Update balance in DB
     await supabase
       .from("profiles")
       .update({
@@ -52,7 +52,7 @@ const DepositPage = () => {
     await addTransaction({
       type: "deposit",
       amount: depositAmount,
-      description: `Deposit via ${PAYMENT_METHODS.find((m) => m.id === method)?.label}`,
+      description: `Crypto deposit via ${selectedNetwork.label}`,
       status: "completed",
       date: new Date().toISOString().split("T")[0],
     });
@@ -75,7 +75,7 @@ const DepositPage = () => {
         <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
           <ArrowDownToLine className="w-6 h-6 text-primary" /> Deposit Funds
         </h1>
-        <p className="text-muted-foreground text-sm mt-1">Add funds to your investment account</p>
+        <p className="text-muted-foreground text-sm mt-1">Send cryptocurrency to fund your investment account</p>
       </motion.div>
 
       {/* Current Balance */}
@@ -104,22 +104,33 @@ const DepositPage = () => {
         className="card-elevated rounded-xl border border-border p-6 space-y-5"
       >
         <div className="space-y-2">
-          <Label className="text-sm text-muted-foreground">Payment Method</Label>
+          <Label className="text-sm text-muted-foreground">Select Network</Label>
           <div className="grid grid-cols-3 gap-2">
-            {PAYMENT_METHODS.map((m) => (
+            {CRYPTO_NETWORKS.map((n) => (
               <button
-                key={m.id}
-                onClick={() => setMethod(m.id)}
+                key={n.id}
+                onClick={() => setNetwork(n.id)}
                 className={`rounded-lg border p-3 text-sm font-medium transition-all ${
-                  method === m.id
+                  network === n.id
                     ? "border-primary bg-primary/10 text-primary"
                     : "border-border bg-muted/30 text-muted-foreground hover:border-muted-foreground"
                 }`}
               >
-                {m.label}
+                {n.label}
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="space-y-2 rounded-lg bg-muted/40 p-4 border border-border">
+          <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Wallet Address</p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-mono text-foreground truncate">{selectedNetwork.address}</p>
+            <button onClick={() => handleCopy(selectedNetwork.address)} className="text-muted-foreground hover:text-foreground shrink-0">
+              {copied ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4" />}
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">Only send {selectedNetwork.label} to this address.</p>
         </div>
 
         <div className="space-y-2">
@@ -145,37 +156,6 @@ const DepositPage = () => {
             ))}
           </div>
         </div>
-
-        {method === "bank" && (
-          <div className="space-y-2 rounded-lg bg-muted/40 p-4 border border-border">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Bank Details</p>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground">Account Number</p>
-                <p className="text-sm font-medium text-foreground">1234567890</p>
-              </div>
-              <button onClick={() => handleCopy("1234567890")} className="text-muted-foreground hover:text-foreground">
-                {copied ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4" />}
-              </button>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Bank Name</p>
-              <p className="text-sm font-medium text-foreground">InvestFlow Bank</p>
-            </div>
-          </div>
-        )}
-
-        {method === "crypto" && (
-          <div className="space-y-2 rounded-lg bg-muted/40 p-4 border border-border">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Wallet Address</p>
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-mono text-foreground truncate">0x1a2b3c4d5e6f7890abcdef1234567890abcdef12</p>
-              <button onClick={() => handleCopy("0x1a2b3c4d5e6f7890abcdef1234567890abcdef12")} className="text-muted-foreground hover:text-foreground shrink-0">
-                {copied ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-        )}
 
         <Button onClick={handleDeposit} disabled={loading} className="w-full h-12 text-base gap-2">
           {loading ? "Processing..." : "Confirm Deposit"}
