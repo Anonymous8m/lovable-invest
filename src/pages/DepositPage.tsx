@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useInvestments } from "@/contexts/InvestmentContext";
 import { motion } from "framer-motion";
-import { ArrowDownToLine, Copy, Check, Wallet } from "lucide-react";
+import { ArrowDownToLine, Copy, Check, Wallet, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,10 +16,11 @@ const CRYPTO_NETWORKS = [
 ];
 
 const DepositPage = () => {
-  const { user, refreshProfile } = useAuth();
-  const { addTransaction } = useInvestments();
+  const { user, session } = useAuth();
+  const { refreshData } = useInvestments();
   const { toast } = useToast();
   const [amount, setAmount] = useState("");
+  const [txHash, setTxHash] = useState("");
   const [network, setNetwork] = useState("btc");
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -37,29 +38,35 @@ const DepositPage = () => {
       toast({ title: "Limit exceeded", description: "Maximum single deposit is $100,000.", variant: "destructive" });
       return;
     }
-    if (!user) return;
+    if (!txHash.trim()) {
+      toast({ title: "Transaction hash required", description: "Please enter the transaction hash from your crypto transfer.", variant: "destructive" });
+      return;
+    }
+    if (!session?.user) return;
 
     setLoading(true);
 
-    await supabase
-      .from("profiles")
-      .update({
-        balance: (user.balance ?? 0) + depositAmount,
-        total_deposit: (user.total_deposit ?? 0) + depositAmount,
-      })
-      .eq("id", user.id);
-
-    await addTransaction({
+    const { error } = await supabase.from("transactions").insert({
+      user_id: session.user.id,
       type: "deposit",
       amount: depositAmount,
       description: `Crypto deposit via ${selectedNetwork.label}`,
-      status: "completed",
-      date: new Date().toISOString().split("T")[0],
+      status: "pending",
+      date: new Date().toISOString(),
+      tx_hash: txHash.trim(),
     });
 
-    await refreshProfile();
-    toast({ title: "Deposit successful", description: `$${depositAmount.toLocaleString()} has been added to your balance.` });
-    setAmount("");
+    if (error) {
+      toast({ title: "Error", description: "Failed to submit deposit request.", variant: "destructive" });
+    } else {
+      await refreshData();
+      toast({
+        title: "Deposit submitted",
+        description: `Your deposit of $${depositAmount.toLocaleString()} is pending admin approval.`,
+      });
+      setAmount("");
+      setTxHash("");
+    }
     setLoading(false);
   };
 
@@ -75,7 +82,7 @@ const DepositPage = () => {
         <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
           <ArrowDownToLine className="w-6 h-6 text-primary" /> Deposit Funds
         </h1>
-        <p className="text-muted-foreground text-sm mt-1">Send cryptocurrency to fund your investment account</p>
+        <p className="text-muted-foreground text-sm mt-1">Send cryptocurrency and submit your transaction hash for verification</p>
       </motion.div>
 
       {/* Current Balance */}
@@ -93,6 +100,20 @@ const DepositPage = () => {
           <p className="text-2xl font-display font-bold text-foreground">
             ${(user?.balance ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
           </p>
+        </div>
+      </motion.div>
+
+      {/* Info Banner */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.12 }}
+        className="rounded-xl border border-primary/20 bg-primary/5 p-4 flex items-start gap-3"
+      >
+        <Clock className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+        <div className="text-sm text-muted-foreground">
+          <p className="font-medium text-foreground">How deposits work</p>
+          <p className="mt-1">1. Send crypto to the wallet address below. 2. Paste your transaction hash. 3. Submit — your deposit will be credited once verified by admin.</p>
         </div>
       </motion.div>
 
@@ -157,8 +178,20 @@ const DepositPage = () => {
           </div>
         </div>
 
+        <div className="space-y-2">
+          <Label className="text-sm text-muted-foreground">Transaction Hash</Label>
+          <Input
+            type="text"
+            placeholder="Paste your transaction hash here"
+            value={txHash}
+            onChange={(e) => setTxHash(e.target.value)}
+            className="text-sm h-12 font-mono"
+          />
+          <p className="text-xs text-muted-foreground">Find this in your wallet app after sending the crypto.</p>
+        </div>
+
         <Button onClick={handleDeposit} disabled={loading} className="w-full h-12 text-base gap-2">
-          {loading ? "Processing..." : "Confirm Deposit"}
+          {loading ? "Submitting..." : "Submit Deposit Request"}
         </Button>
       </motion.div>
     </div>
