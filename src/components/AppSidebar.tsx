@@ -7,10 +7,13 @@ import {
   LogOut,
   ArrowDownToLine,
   ArrowUpFromLine,
+  ShieldCheck,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar,
   SidebarContent,
@@ -32,6 +35,10 @@ const menuItems = [
   { title: "Investment", url: "/dashboard/invest", icon: TrendingUp },
   { title: "Our Plans", url: "/dashboard/plans", icon: Layers },
   { title: "My Profile", url: "/dashboard/profile", icon: User },
+];
+
+const adminItems = [
+  { title: "Deposit Approvals", url: "/dashboard/admin/deposits", icon: ShieldCheck },
 ];
 
 export function AppSidebar() {
