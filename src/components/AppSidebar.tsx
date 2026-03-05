@@ -44,8 +44,21 @@ const adminItems = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const { logout, user } = useAuth();
+  const { logout, user, session } = useAuth();
   const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (!session?.user) return;
+      const { data } = await supabase.rpc("has_role", {
+        _user_id: session.user.id,
+        _role: "admin",
+      });
+      setIsAdmin(!!data);
+    };
+    checkAdmin();
+  }, [session?.user?.id]);
 
   const handleLogout = async () => {
     await logout();
