@@ -53,14 +53,6 @@ const WithdrawPage = () => {
 
     setLoading(true);
 
-    await supabase
-      .from("profiles")
-      .update({
-        balance: balance - withdrawAmount,
-        total_withdrawal: (user.total_withdrawal ?? 0) + withdrawAmount,
-      })
-      .eq("id", user.id);
-
     await addTransaction({
       type: "withdrawal",
       amount: withdrawAmount,
@@ -69,8 +61,7 @@ const WithdrawPage = () => {
       date: new Date().toISOString().split("T")[0],
     });
 
-    await refreshProfile();
-    toast({ title: "Withdrawal submitted", description: `$${withdrawAmount.toLocaleString()} withdrawal is pending approval.` });
+    toast({ title: "Withdrawal submitted", description: `$${withdrawAmount.toLocaleString()} withdrawal is pending admin approval.` });
     setAmount("");
     setWalletAddress("");
     setLoading(false);
