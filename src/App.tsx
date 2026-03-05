@@ -18,6 +18,7 @@ import ProfilePage from "./pages/ProfilePage";
 import DepositPage from "./pages/DepositPage";
 import WithdrawPage from "./pages/WithdrawPage";
 import AdminDepositsPage from "./pages/AdminDepositsPage";
+import AdminWithdrawalsPage from "./pages/AdminWithdrawalsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ const App = () => (
                 <Route path="deposit" element={<DepositPage />} />
                 <Route path="withdraw" element={<WithdrawPage />} />
                 <Route path="admin/deposits" element={<AdminDepositsPage />} />
+                <Route path="admin/withdrawals" element={<AdminWithdrawalsPage />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

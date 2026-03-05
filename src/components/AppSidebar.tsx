@@ -39,6 +39,7 @@ const menuItems = [
 
 const adminItems = [
   { title: "Deposit Approvals", url: "/dashboard/admin/deposits", icon: ShieldCheck },
+  { title: "Withdrawal Approvals", url: "/dashboard/admin/withdrawals", icon: ShieldCheck },
 ];
 
 export function AppSidebar() {
