@@ -1,8 +1,13 @@
-import { TrendingUp, Shield, Users, BarChart3 } from "lucide-react";
+import { TrendingUp, Shield, Lock, BarChart3 } from "lucide-react";
 import { motion } from "framer-motion";
-import signupIllustration from "@/assets/signup-illustration.png";
 
-const SignupHeroPanel = () => {
+interface AuthHeroPanelProps {
+  headline: string;
+  highlightedText: string;
+  subtitle: string;
+}
+
+const AuthHeroPanel = ({ headline, highlightedText, subtitle }: AuthHeroPanelProps) => {
   return (
     <div className="hidden lg:flex flex-col justify-between p-10 xl:p-14 bg-gradient-to-br from-primary/15 via-background to-secondary/30 relative overflow-hidden">
       {/* Decorative circles */}
@@ -10,7 +15,7 @@ const SignupHeroPanel = () => {
       <div className="absolute bottom-[-60px] left-[-60px] w-[200px] h-[200px] rounded-full bg-accent/10 blur-3xl" />
 
       <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}>
-        <div className="flex items-center gap-2.5 mb-12">
+        <div className="flex items-center gap-2.5 mb-16">
           <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
             <TrendingUp className="w-5 h-5 text-primary-foreground" />
           </div>
@@ -18,29 +23,18 @@ const SignupHeroPanel = () => {
         </div>
 
         <h1 className="text-4xl xl:text-5xl font-display font-bold text-foreground leading-tight mb-4">
-          Invest smarter.
+          {headline}
           <br />
-          <span className="text-gradient">Grow your wealth.</span>
+          <span className="text-gradient">{highlightedText}</span>
         </h1>
-        <p className="text-muted-foreground text-lg max-w-md">
-          Join thousands of investors building their financial future with our secure, intelligent platform.
-        </p>
+        <p className="text-muted-foreground text-lg max-w-md">{subtitle}</p>
       </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3, duration: 0.6 }}
-        className="flex justify-center my-8"
-      >
-        <img src={signupIllustration} alt="Investment growth illustration" className="w-full max-w-xs xl:max-w-sm object-contain drop-shadow-lg" />
-      </motion.div>
-
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.6 }} className="space-y-5">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.6 }} className="space-y-5">
         <div className="grid grid-cols-3 gap-3">
           {[
             { icon: Shield, label: "Bank-grade security" },
-            { icon: Users, label: "10K+ investors" },
+            { icon: Lock, label: "Encrypted data" },
             { icon: BarChart3, label: "Real-time analytics" },
           ].map(({ icon: Icon, label }) => (
             <div key={label} className="flex flex-col items-center gap-2 p-3 rounded-xl bg-card/60 border border-border/50">
@@ -59,4 +53,4 @@ const SignupHeroPanel = () => {
   );
 };
 
-export default SignupHeroPanel;
+export default AuthHeroPanel;
