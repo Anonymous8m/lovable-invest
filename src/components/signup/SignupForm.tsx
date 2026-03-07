@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -9,12 +9,7 @@ import { TrendingUp, Eye, EyeOff, Lock, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import { lovable } from "@/integrations/lovable/index";
 import PasswordStrengthIndicator from "./PasswordStrengthIndicator";
-
-const COUNTRIES = [
-  "United States", "United Kingdom", "Canada", "Australia", "Germany",
-  "France", "Nigeria", "South Africa", "India", "Brazil", "Japan",
-  "Singapore", "UAE", "Kenya", "Ghana", "Other",
-];
+import { COUNTRIES, detectUserCountry } from "@/lib/countries";
 
 const SignupForm = () => {
   const [form, setForm] = useState({
@@ -38,6 +33,12 @@ const SignupForm = () => {
   const [signupError, setSignupError] = useState("");
   const { signup } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    detectUserCountry().then((country) => {
+      if (country) setForm((prev) => ({ ...prev, country }));
+    });
+  }, []);
 
   const validate = () => {
     const errs: Record<string, string> = {};
@@ -248,7 +249,7 @@ const SignupForm = () => {
                     id="country"
                     value={form.country}
                     onChange={(e) => updateField("country", e.target.value)}
-                    className={`flex h-11 w-full rounded-md border border-border bg-muted/50 px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-foreground transition-colors`}
+                    className="flex h-11 w-full rounded-md border border-border bg-muted/50 px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-foreground transition-colors"
                   >
                     <option value="">Select country</option>
                     {COUNTRIES.map((c) => (
