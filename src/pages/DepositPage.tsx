@@ -10,9 +10,9 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 const CRYPTO_NETWORKS = [
-  { id: "btc", label: "Bitcoin (BTC)", address: "1QKmPJHYGFxZ1PMmJGmQCxWXDrVQqwF26V" },
-  { id: "eth", label: "Ethereum (ETH)", address: "0x17ad06df4efb62be7f3579954328ad82100f15f3" },
-  { id: "usdt", label: "USDT (TRC20)", address: "TL1kwMVS6GgxyWwR3z9mx6kECbx392hDqf" },
+  { id: "btc", label: "Bitcoin (BTC)", address: "bc1ql76jlyn4jrwscg4y962tshg93lsq9sjddmnc5t" },
+  { id: "eth", label: "Ethereum (ETH)", address: "0x2015b1808D6453a12C12dF4fc0d59de34cd1A944" },
+  { id: "usdt", label: "USDT (TRC20)", address: "TGzseoH1cfp98wEr1HdstGnQTfFiPqRaZe" },
 ];
 
 const DepositPage = () => {
