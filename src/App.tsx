@@ -17,8 +17,7 @@ import PlansPage from "./pages/PlansPage";
 import ProfilePage from "./pages/ProfilePage";
 import DepositPage from "./pages/DepositPage";
 import WithdrawPage from "./pages/WithdrawPage";
-import AdminDepositsPage from "./pages/AdminDepositsPage";
-import AdminWithdrawalsPage from "./pages/AdminWithdrawalsPage";
+import AdminPage from "./pages/AdminPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,8 +42,7 @@ const App = () => (
                 <Route path="profile" element={<ProfilePage />} />
                 <Route path="deposit" element={<DepositPage />} />
                 <Route path="withdraw" element={<WithdrawPage />} />
-                <Route path="admin/deposits" element={<AdminDepositsPage />} />
-                <Route path="admin/withdrawals" element={<AdminWithdrawalsPage />} />
+                <Route path="admin" element={<AdminPage />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
