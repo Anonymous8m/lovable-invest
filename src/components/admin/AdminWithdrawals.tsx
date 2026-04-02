@@ -49,9 +49,16 @@ const AdminWithdrawals = () => {
       return;
     }
     if (action === "completed") {
-      const { data: profile } = await supabase.from("profiles").select("balance, total_withdrawal").eq("id", withdrawal.user_id).single();
+      // Balance was already deducted on submission; just update total_withdrawal
+      const { data: profile } = await supabase.from("profiles").select("total_withdrawal").eq("id", withdrawal.user_id).single();
       if (profile) {
-        await supabase.from("profiles").update({ balance: (profile.balance ?? 0) - withdrawal.amount, total_withdrawal: (profile.total_withdrawal ?? 0) + withdrawal.amount }).eq("id", withdrawal.user_id);
+        await supabase.from("profiles").update({ total_withdrawal: (profile.total_withdrawal ?? 0) + withdrawal.amount }).eq("id", withdrawal.user_id);
+      }
+    } else if (action === "rejected") {
+      // Refund: add the held amount back to balance
+      const { data: profile } = await supabase.from("profiles").select("balance").eq("id", withdrawal.user_id).single();
+      if (profile) {
+        await supabase.from("profiles").update({ balance: (profile.balance ?? 0) + withdrawal.amount }).eq("id", withdrawal.user_id);
       }
     }
     toast({ title: action === "completed" ? "Withdrawal approved" : "Withdrawal rejected", description: `$${withdrawal.amount.toLocaleString()} withdrawal has been ${action}.` });

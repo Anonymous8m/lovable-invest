@@ -11,7 +11,11 @@ const DashboardLayout = () => {
 
   useEffect(() => {
     if (!loading && !isAuthenticated) navigate("/login");
-  }, [isAuthenticated, loading, navigate]);
+    // Block unverified email users
+    if (!loading && isAuthenticated && session?.user && !session.user.email_confirmed_at) {
+      navigate("/check-email");
+    }
+  }, [isAuthenticated, loading, navigate, session]);
 
   if (loading) {
     return (
