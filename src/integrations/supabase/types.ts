@@ -55,6 +55,7 @@ export type Database = {
           phone: string
           total_deposit: number
           total_withdrawal: number
+          transaction_pin: string | null
           updated_at: string
           username: string
         }
@@ -68,6 +69,7 @@ export type Database = {
           phone?: string
           total_deposit?: number
           total_withdrawal?: number
+          transaction_pin?: string | null
           updated_at?: string
           username?: string
         }
@@ -81,6 +83,7 @@ export type Database = {
           phone?: string
           total_deposit?: number
           total_withdrawal?: number
+          transaction_pin?: string | null
           updated_at?: string
           username?: string
         }
