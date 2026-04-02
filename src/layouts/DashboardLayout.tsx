@@ -6,12 +6,16 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Bell, Search } from "lucide-react";
 
 const DashboardLayout = () => {
-  const { isAuthenticated, user, loading } = useAuth();
+  const { isAuthenticated, user, loading, session } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!loading && !isAuthenticated) navigate("/login");
-  }, [isAuthenticated, loading, navigate]);
+    // Block unverified email users
+    if (!loading && isAuthenticated && session?.user && !session.user.email_confirmed_at) {
+      navigate("/check-email");
+    }
+  }, [isAuthenticated, loading, navigate, session]);
 
   if (loading) {
     return (

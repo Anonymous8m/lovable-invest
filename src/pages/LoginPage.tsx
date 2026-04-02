@@ -160,9 +160,9 @@ const LoginPage = () => {
                   <input type="checkbox" className="rounded border-border" />
                   <span className="text-muted-foreground">Remember me</span>
                 </label>
-                <button type="button" className="text-sm text-primary hover:underline">
+                <Link to="/forgot-password" className="text-sm text-primary hover:underline">
                   Forgot password?
-                </button>
+                </Link>
               </div>
 
               <Button type="submit" className="w-full h-12 text-base glow-primary" size="lg" disabled={loading}>

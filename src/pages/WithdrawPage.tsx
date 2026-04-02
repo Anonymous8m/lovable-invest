@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, hashPin } from "@/contexts/AuthContext";
 import { useInvestments } from "@/contexts/InvestmentContext";
+import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
-import { ArrowUpFromLine, Wallet, AlertTriangle } from "lucide-react";
+import { ArrowUpFromLine, Wallet, AlertTriangle, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +22,7 @@ const WithdrawPage = () => {
   const [amount, setAmount] = useState("");
   const [network, setNetwork] = useState("btc");
   const [walletAddress, setWalletAddress] = useState("");
+  const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(false);
 
   const balance = user?.balance ?? 0;
@@ -40,17 +42,37 @@ const WithdrawPage = () => {
       toast({ title: "Limit exceeded", description: "Maximum single withdrawal is $50,000.", variant: "destructive" });
       return;
     }
-    if (!walletAddress.trim()) {
-      toast({ title: "Missing wallet address", description: "Please enter your crypto wallet address.", variant: "destructive" });
+    if (!walletAddress.trim() || walletAddress.trim().length < 10 || walletAddress.trim().length > 100) {
+      toast({ title: "Invalid address", description: "Please enter a valid wallet address.", variant: "destructive" });
       return;
     }
-    if (walletAddress.trim().length < 10 || walletAddress.trim().length > 100) {
-      toast({ title: "Invalid address", description: "Please enter a valid wallet address.", variant: "destructive" });
+    if (!/^\d{4}$/.test(pin)) {
+      toast({ title: "Invalid PIN", description: "Please enter your 4-digit transaction PIN.", variant: "destructive" });
       return;
     }
     if (!user) return;
 
+    // Verify PIN
+    const hashedInput = await hashPin(pin);
+    if (user.transaction_pin && hashedInput !== user.transaction_pin) {
+      toast({ title: "Wrong PIN", description: "The transaction PIN you entered is incorrect.", variant: "destructive" });
+      setPin("");
+      return;
+    }
+
     setLoading(true);
+
+    // Hold balance immediately to prevent double-spending
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({ balance: balance - withdrawAmount })
+      .eq("id", user.id);
+
+    if (updateError) {
+      toast({ title: "Error", description: "Failed to process withdrawal. Try again.", variant: "destructive" });
+      setLoading(false);
+      return;
+    }
 
     await addTransaction({
       type: "withdrawal",
@@ -60,9 +82,11 @@ const WithdrawPage = () => {
       date: new Date().toISOString().split("T")[0],
     });
 
+    await refreshProfile();
     toast({ title: "Withdrawal submitted", description: `$${withdrawAmount.toLocaleString()} withdrawal is pending admin approval.` });
     setAmount("");
     setWalletAddress("");
+    setPin("");
     setLoading(false);
   };
 
@@ -158,6 +182,21 @@ const WithdrawPage = () => {
               Withdraw all (${balance.toLocaleString()})
             </button>
           )}
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-sm text-muted-foreground flex items-center gap-1.5">
+            <Lock className="w-3.5 h-3.5" /> Transaction PIN
+          </Label>
+          <Input
+            type="password"
+            inputMode="numeric"
+            maxLength={4}
+            placeholder="Enter 4-digit PIN"
+            value={pin}
+            onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+            className="h-12 max-w-[160px]"
+          />
         </div>
 
         <Button

@@ -84,13 +84,14 @@ const SignupForm = () => {
       phone: form.phone,
       username: form.username,
       password: form.password,
+      transactionPin: form.transactionPin,
     });
     setLoading(false);
 
     if (result.error) {
       setSignupError(result.error);
     } else {
-      navigate("/dashboard");
+      navigate("/check-email");
     }
   };
 

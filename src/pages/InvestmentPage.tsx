@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useInvestments } from "@/contexts/InvestmentContext";
+import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { TrendingUp, Clock, DollarSign, Percent } from "lucide-react";
+import { TrendingUp, Clock, DollarSign, Percent, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -18,28 +18,49 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 
-const plans = [
-  { name: "Standard Plan", min: 1000, max: 5000, roi: 12, duration: "30 days", color: "from-primary/20 to-primary/5" },
-  { name: "Professional Plan", min: 5000, max: 25000, roi: 18, duration: "60 days", color: "from-info/20 to-info/5" },
-  { name: "Jupiter Plan", min: 25000, max: 100000, roi: 25, duration: "90 days", color: "from-warning/20 to-warning/5" },
-  { name: "Mercury Plan", min: 100000, max: 500000, roi: 35, duration: "120 days", color: "from-destructive/20 to-destructive/5" },
-];
+interface Plan {
+  id: string;
+  name: string;
+  min_amount: number;
+  max_amount: number;
+  roi: number;
+  duration: string;
+}
 
-type Plan = typeof plans[0];
+const PLAN_COLORS = [
+  "from-primary/20 to-primary/5",
+  "from-blue-500/20 to-blue-500/5",
+  "from-amber-500/20 to-amber-500/5",
+  "from-rose-500/20 to-rose-500/5",
+];
 
 const InvestmentPage = () => {
   const { user, session, refreshProfile } = useAuth();
   const { addInvestment, addTransaction, investments } = useInvestments();
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [loadingPlans, setLoadingPlans] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [investAmount, setInvestAmount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const fetchPlans = async () => {
+      const { data } = await supabase
+        .from("investment_plans")
+        .select("*")
+        .order("min_amount", { ascending: true });
+      if (data) setPlans(data);
+      setLoadingPlans(false);
+    };
+    fetchPlans();
+  }, []);
 
   const parsedAmount = Number(investAmount);
   const isValidAmount =
     selectedPlan &&
     !isNaN(parsedAmount) &&
-    parsedAmount >= selectedPlan.min &&
-    parsedAmount <= selectedPlan.max;
+    parsedAmount >= selectedPlan.min_amount &&
+    parsedAmount <= selectedPlan.max_amount;
 
   const handleConfirmInvest = async () => {
     if (!user || !session || !selectedPlan || !isValidAmount) return;
@@ -84,6 +105,14 @@ const InvestmentPage = () => {
     }
   };
 
+  if (loadingPlans) {
+    return (
+      <div className="flex items-center justify-center min-h-[40vh]">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
@@ -120,13 +149,13 @@ const InvestmentPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {plans.map((plan, i) => (
           <motion.div
-            key={plan.name}
+            key={plan.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
             className="card-elevated rounded-xl border border-border overflow-hidden"
           >
-            <div className={`p-6 bg-gradient-to-br ${plan.color}`}>
+            <div className={`p-6 bg-gradient-to-br ${PLAN_COLORS[i % PLAN_COLORS.length]}`}>
               <h3 className="text-xl font-display font-bold text-foreground">{plan.name}</h3>
               <p className="text-4xl font-display font-bold text-foreground mt-2">{plan.roi}%</p>
               <p className="text-sm text-muted-foreground">Return on Investment</p>
@@ -136,12 +165,12 @@ const InvestmentPage = () => {
                 <div className="flex items-center gap-3 text-sm">
                   <DollarSign className="w-4 h-4 text-muted-foreground" />
                   <span className="text-muted-foreground">Min Investment:</span>
-                  <span className="ml-auto font-medium text-foreground">${plan.min.toLocaleString()}</span>
+                  <span className="ml-auto font-medium text-foreground">${plan.min_amount.toLocaleString()}</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
                   <DollarSign className="w-4 h-4 text-muted-foreground" />
                   <span className="text-muted-foreground">Max Investment:</span>
-                  <span className="ml-auto font-medium text-foreground">${plan.max.toLocaleString()}</span>
+                  <span className="ml-auto font-medium text-foreground">${plan.max_amount.toLocaleString()}</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
                   <Percent className="w-4 h-4 text-muted-foreground" />
@@ -157,7 +186,7 @@ const InvestmentPage = () => {
               <Button
                 onClick={() => {
                   setSelectedPlan(plan);
-                  setInvestAmount(String(plan.min));
+                  setInvestAmount(String(plan.min_amount));
                 }}
                 className="w-full glow-primary"
                 size="lg"
@@ -178,8 +207,8 @@ const InvestmentPage = () => {
               <div className="space-y-4 pt-2">
                 <p className="text-sm text-muted-foreground">
                   Enter the amount you'd like to invest. Must be between{" "}
-                  <span className="font-medium text-foreground">${selectedPlan?.min.toLocaleString()}</span> and{" "}
-                  <span className="font-medium text-foreground">${selectedPlan?.max.toLocaleString()}</span>.
+                  <span className="font-medium text-foreground">${selectedPlan?.min_amount.toLocaleString()}</span> and{" "}
+                  <span className="font-medium text-foreground">${selectedPlan?.max_amount.toLocaleString()}</span>.
                 </p>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground">Investment Amount ($)</label>
@@ -187,13 +216,13 @@ const InvestmentPage = () => {
                     type="number"
                     value={investAmount}
                     onChange={(e) => setInvestAmount(e.target.value)}
-                    min={selectedPlan?.min}
-                    max={selectedPlan?.max}
-                    placeholder={`Min $${selectedPlan?.min.toLocaleString()}`}
+                    min={selectedPlan?.min_amount}
+                    max={selectedPlan?.max_amount}
+                    placeholder={`Min $${selectedPlan?.min_amount.toLocaleString()}`}
                   />
                   {investAmount && !isValidAmount && (
                     <p className="text-xs text-destructive">
-                      Amount must be between ${selectedPlan?.min.toLocaleString()} and ${selectedPlan?.max.toLocaleString()}
+                      Amount must be between ${selectedPlan?.min_amount.toLocaleString()} and ${selectedPlan?.max_amount.toLocaleString()}
                     </p>
                   )}
                 </div>
@@ -224,7 +253,7 @@ const InvestmentPage = () => {
               onClick={handleConfirmInvest}
               disabled={!isValidAmount || isSubmitting}
             >
-              {isSubmitting ? "Processing..." : `Confirm Investment`}
+              {isSubmitting ? "Processing..." : "Confirm Investment"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -9,6 +9,9 @@ import { InvestmentProvider } from "@/contexts/InvestmentContext";
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
+import CheckEmailPage from "./pages/CheckEmailPage";
 import DashboardLayout from "./layouts/DashboardLayout";
 import DashboardPage from "./pages/DashboardPage";
 import TransactionsPage from "./pages/TransactionsPage";
@@ -34,6 +37,9 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/check-email" element={<CheckEmailPage />} />
               <Route path="/dashboard" element={<DashboardLayout />}>
                 <Route index element={<DashboardPage />} />
                 <Route path="transactions" element={<TransactionsPage />} />
