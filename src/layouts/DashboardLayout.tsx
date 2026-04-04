@@ -45,10 +45,7 @@ const DashboardLayout = () => {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <button className="relative text-muted-foreground hover:text-foreground">
-                <Bell className="w-5 h-5" />
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
-              </button>
+              <NotificationBell />
               <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm">
                 {user?.full_name?.charAt(0) || "U"}
               </div>

@@ -61,6 +61,14 @@ const AdminWithdrawals = () => {
         await supabase.from("profiles").update({ balance: (profile.balance ?? 0) + withdrawal.amount }).eq("id", withdrawal.user_id);
       }
     }
+    // Create notification
+    await supabase.rpc("create_notification", {
+      _user_id: withdrawal.user_id,
+      _title: action === "completed" ? "Withdrawal Approved ✅" : "Withdrawal Rejected ❌",
+      _message: action === "completed"
+        ? `Your withdrawal of $${withdrawal.amount.toLocaleString()} has been approved and is being processed.`
+        : `Your withdrawal of $${withdrawal.amount.toLocaleString()} has been rejected. Funds have been returned to your balance.`,
+    });
     toast({ title: action === "completed" ? "Withdrawal approved" : "Withdrawal rejected", description: `$${withdrawal.amount.toLocaleString()} withdrawal has been ${action}.` });
     await fetchWithdrawals();
     setProcessingId(null);
