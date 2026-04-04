@@ -66,6 +66,14 @@ const AdminDeposits = () => {
         await supabase.from("profiles").update({ balance: (profile.balance ?? 0) + deposit.amount, total_deposit: (profile.total_deposit ?? 0) + deposit.amount }).eq("id", deposit.user_id);
       }
     }
+    // Create notification
+    await supabase.rpc("create_notification", {
+      _user_id: deposit.user_id,
+      _title: action === "completed" ? "Deposit Approved ✅" : "Deposit Rejected ❌",
+      _message: action === "completed"
+        ? `Your deposit of $${deposit.amount.toLocaleString()} has been approved and credited to your balance.`
+        : `Your deposit of $${deposit.amount.toLocaleString()} has been rejected. Please contact support if you believe this is an error.`,
+    });
     toast({ title: action === "completed" ? "Deposit approved" : "Deposit rejected", description: `$${deposit.amount.toLocaleString()} deposit has been ${action}.` });
     await fetchDeposits();
     setProcessingId(null);

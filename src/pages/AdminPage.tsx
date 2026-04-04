@@ -47,7 +47,7 @@ const AdminPage = () => {
       </motion.div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5 h-auto">
+        <TabsList className="flex w-full overflow-x-auto h-auto">
           <TabsTrigger value="overview" className="gap-1.5 text-xs sm:text-sm py-2.5">
             <LayoutDashboard className="w-4 h-4 hidden sm:block" /> Overview
           </TabsTrigger>
