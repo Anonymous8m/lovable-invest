@@ -3,7 +3,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEffect } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { Bell, Search } from "lucide-react";
+import { Search } from "lucide-react";
+import { NotificationBell } from "@/components/NotificationBell";
 
 const DashboardLayout = () => {
   const { isAuthenticated, user, loading, session } = useAuth();
