@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/components/ui/badge";
 import {
   Sidebar,
   SidebarContent,
@@ -47,6 +48,7 @@ export function AppSidebar() {
   const { logout, user, session } = useAuth();
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -56,6 +58,13 @@ export function AppSidebar() {
         _role: "admin",
       });
       setIsAdmin(!!data);
+      if (data) {
+        const { count } = await supabase
+          .from("transactions")
+          .select("*", { count: "exact", head: true })
+          .eq("status", "pending");
+        setPendingCount(count ?? 0);
+      }
     };
     checkAdmin();
   }, [session?.user?.id]);
@@ -120,7 +129,16 @@ export function AppSidebar() {
                         activeClassName="bg-sidebar-accent text-primary font-medium"
                       >
                         <item.icon className="mr-2 h-4 w-4" />
-                        {!collapsed && <span>{item.title}</span>}
+                        {!collapsed && (
+                          <span className="flex items-center gap-2">
+                            {item.title}
+                            {pendingCount > 0 && (
+                              <Badge variant="destructive" className="text-[10px] h-5 min-w-[20px] px-1.5">
+                                {pendingCount}
+                              </Badge>
+                            )}
+                          </span>
+                        )}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

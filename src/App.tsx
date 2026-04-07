@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { InvestmentProvider } from "@/contexts/InvestmentContext";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
@@ -21,42 +22,48 @@ import ProfilePage from "./pages/ProfilePage";
 import DepositPage from "./pages/DepositPage";
 import WithdrawPage from "./pages/WithdrawPage";
 import AdminPage from "./pages/AdminPage";
+import TermsPage from "./pages/TermsPage";
+import PrivacyPage from "./pages/PrivacyPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AuthProvider>
-        <InvestmentProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignupPage />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
-              <Route path="/check-email" element={<CheckEmailPage />} />
-              <Route path="/dashboard" element={<DashboardLayout />}>
-                <Route index element={<DashboardPage />} />
-                <Route path="transactions" element={<TransactionsPage />} />
-                <Route path="invest" element={<InvestmentPage />} />
-                <Route path="plans" element={<PlansPage />} />
-                <Route path="profile" element={<ProfilePage />} />
-                <Route path="deposit" element={<DepositPage />} />
-                <Route path="withdraw" element={<WithdrawPage />} />
-                <Route path="admin" element={<AdminPage />} />
-              </Route>
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </InvestmentProvider>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <AuthProvider>
+          <InvestmentProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/signup" element={<SignupPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/check-email" element={<CheckEmailPage />} />
+                <Route path="/terms" element={<TermsPage />} />
+                <Route path="/privacy" element={<PrivacyPage />} />
+                <Route path="/dashboard" element={<DashboardLayout />}>
+                  <Route index element={<DashboardPage />} />
+                  <Route path="transactions" element={<TransactionsPage />} />
+                  <Route path="invest" element={<InvestmentPage />} />
+                  <Route path="plans" element={<PlansPage />} />
+                  <Route path="profile" element={<ProfilePage />} />
+                  <Route path="deposit" element={<DepositPage />} />
+                  <Route path="withdraw" element={<WithdrawPage />} />
+                  <Route path="admin" element={<AdminPage />} />
+                </Route>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </InvestmentProvider>
+        </AuthProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
