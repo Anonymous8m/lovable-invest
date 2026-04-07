@@ -240,8 +240,14 @@ const Index = () => {
       </section>
 
       {/* Footer */}
-      <footer className="px-6 lg:px-12 py-8 border-t border-border/50 text-center text-sm text-muted-foreground">
-        © 2026 InvestFlow. All rights reserved.
+      <footer className="px-6 lg:px-12 py-8 border-t border-border/50">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
+          <span>© 2026 InvestFlow. All rights reserved.</span>
+          <div className="flex items-center gap-4">
+            <Link to="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
+            <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+          </div>
+        </div>
       </footer>
     </div>
   );
