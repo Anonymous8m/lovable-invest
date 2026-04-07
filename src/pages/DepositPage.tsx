@@ -44,6 +44,18 @@ const DepositPage = () => {
     }
     if (!session?.user) return;
 
+    // Rate limit: max 5 pending deposits
+    const { count } = await supabase
+      .from("transactions")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", session.user.id)
+      .eq("type", "deposit")
+      .eq("status", "pending");
+    if ((count ?? 0) >= 5) {
+      toast({ title: "Too many pending requests", description: "You already have 5 pending deposits. Please wait for them to be processed.", variant: "destructive" });
+      return;
+    }
+
     setLoading(true);
 
     const { error } = await supabase.from("transactions").insert({

@@ -52,6 +52,18 @@ const WithdrawPage = () => {
     }
     if (!user) return;
 
+    // Rate limit: max 5 pending withdrawals
+    const { count } = await supabase
+      .from("transactions")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("type", "withdrawal")
+      .eq("status", "pending");
+    if ((count ?? 0) >= 5) {
+      toast({ title: "Too many pending requests", description: "You already have 5 pending withdrawals. Please wait for them to be processed.", variant: "destructive" });
+      return;
+    }
+
     // Verify PIN
     const hashedInput = await hashPin(pin);
     if (user.transaction_pin && hashedInput !== user.transaction_pin) {
