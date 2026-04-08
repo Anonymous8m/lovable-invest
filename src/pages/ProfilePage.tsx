@@ -68,6 +68,48 @@ const ProfilePage = () => {
       setPasswordForm({ newPassword: "", confirm: "" });
     }
   };
+  const handleUpdatePin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    if (hasExistingPin) {
+      if (!/^\d{4}$/.test(pinForm.currentPin)) {
+        toast.error("Enter your current 4-digit PIN");
+        return;
+      }
+      const hashedCurrent = await hashPin(pinForm.currentPin);
+      if (hashedCurrent !== user.transaction_pin) {
+        toast.error("Current PIN is incorrect");
+        return;
+      }
+    }
+
+    if (!/^\d{4}$/.test(pinForm.newPin)) {
+      toast.error("New PIN must be exactly 4 digits");
+      return;
+    }
+    if (pinForm.newPin !== pinForm.confirmPin) {
+      toast.error("PINs do not match");
+      return;
+    }
+
+    setSavingPin(true);
+    const hashedNew = await hashPin(pinForm.newPin);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ transaction_pin: hashedNew })
+      .eq("id", user.id);
+    setSavingPin(false);
+
+    if (error) {
+      toast.error("Failed to update PIN");
+    } else {
+      await refreshProfile();
+      toast.success(hasExistingPin ? "Transaction PIN updated" : "Transaction PIN set successfully");
+      setPinForm({ currentPin: "", newPin: "", confirmPin: "" });
+    }
+  };
+
 
   return (
     <div className="space-y-6 max-w-2xl">
