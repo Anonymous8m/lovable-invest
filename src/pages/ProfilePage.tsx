@@ -20,7 +20,14 @@ const ProfilePage = () => {
     newPassword: "",
     confirm: "",
   });
+  const [pinForm, setPinForm] = useState({
+    currentPin: "",
+    newPin: "",
+    confirmPin: "",
+  });
   const [saving, setSaving] = useState(false);
+  const [savingPin, setSavingPin] = useState(false);
+  const hasExistingPin = !!user?.transaction_pin;
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
