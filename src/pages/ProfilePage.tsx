@@ -1,11 +1,11 @@
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, hashPin } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { toast } from "sonner";
-import { User, Mail, Phone, Lock, Camera } from "lucide-react";
+import { User, Mail, Phone, Lock, Camera, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const ProfilePage = () => {
@@ -20,7 +20,14 @@ const ProfilePage = () => {
     newPassword: "",
     confirm: "",
   });
+  const [pinForm, setPinForm] = useState({
+    currentPin: "",
+    newPin: "",
+    confirmPin: "",
+  });
   const [saving, setSaving] = useState(false);
+  const [savingPin, setSavingPin] = useState(false);
+  const hasExistingPin = !!user?.transaction_pin;
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,6 +68,48 @@ const ProfilePage = () => {
       setPasswordForm({ newPassword: "", confirm: "" });
     }
   };
+  const handleUpdatePin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    if (hasExistingPin) {
+      if (!/^\d{4}$/.test(pinForm.currentPin)) {
+        toast.error("Enter your current 4-digit PIN");
+        return;
+      }
+      const hashedCurrent = await hashPin(pinForm.currentPin);
+      if (hashedCurrent !== user.transaction_pin) {
+        toast.error("Current PIN is incorrect");
+        return;
+      }
+    }
+
+    if (!/^\d{4}$/.test(pinForm.newPin)) {
+      toast.error("New PIN must be exactly 4 digits");
+      return;
+    }
+    if (pinForm.newPin !== pinForm.confirmPin) {
+      toast.error("PINs do not match");
+      return;
+    }
+
+    setSavingPin(true);
+    const hashedNew = await hashPin(pinForm.newPin);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ transaction_pin: hashedNew })
+      .eq("id", user.id);
+    setSavingPin(false);
+
+    if (error) {
+      toast.error("Failed to update PIN");
+    } else {
+      await refreshProfile();
+      toast.success(hasExistingPin ? "Transaction PIN updated" : "Transaction PIN set successfully");
+      setPinForm({ currentPin: "", newPin: "", confirmPin: "" });
+    }
+  };
+
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -145,6 +194,66 @@ const ProfilePage = () => {
             </div>
           </div>
           <Button type="submit" variant="secondary">Update Password</Button>
+        </form>
+      </motion.div>
+
+      {/* Transaction PIN */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="card-elevated rounded-xl border border-border p-6"
+      >
+        <h2 className="font-display font-semibold text-foreground mb-1 flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4" /> Transaction PIN
+        </h2>
+        <p className="text-muted-foreground text-sm mb-4">
+          {hasExistingPin ? "Update your 4-digit PIN used for withdrawals." : "Set a 4-digit PIN to secure your withdrawals."}
+        </p>
+        <form onSubmit={handleUpdatePin} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {hasExistingPin && (
+              <div className="space-y-2">
+                <Label>Current PIN</Label>
+                <Input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={4}
+                  placeholder="••••"
+                  value={pinForm.currentPin}
+                  onChange={(e) => setPinForm({ ...pinForm, currentPin: e.target.value.replace(/\D/g, "").slice(0, 4) })}
+                  className="bg-muted border-border max-w-[140px]"
+                />
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label>New PIN</Label>
+              <Input
+                type="password"
+                inputMode="numeric"
+                maxLength={4}
+                placeholder="••••"
+                value={pinForm.newPin}
+                onChange={(e) => setPinForm({ ...pinForm, newPin: e.target.value.replace(/\D/g, "").slice(0, 4) })}
+                className="bg-muted border-border max-w-[140px]"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Confirm PIN</Label>
+              <Input
+                type="password"
+                inputMode="numeric"
+                maxLength={4}
+                placeholder="••••"
+                value={pinForm.confirmPin}
+                onChange={(e) => setPinForm({ ...pinForm, confirmPin: e.target.value.replace(/\D/g, "").slice(0, 4) })}
+                className="bg-muted border-border max-w-[140px]"
+              />
+            </div>
+          </div>
+          <Button type="submit" variant="secondary" disabled={savingPin}>
+            {savingPin ? "Saving..." : hasExistingPin ? "Update PIN" : "Set PIN"}
+          </Button>
         </form>
       </motion.div>
     </div>
