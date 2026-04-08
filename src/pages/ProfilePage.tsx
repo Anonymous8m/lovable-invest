@@ -196,6 +196,66 @@ const ProfilePage = () => {
           <Button type="submit" variant="secondary">Update Password</Button>
         </form>
       </motion.div>
+
+      {/* Transaction PIN */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="card-elevated rounded-xl border border-border p-6"
+      >
+        <h2 className="font-display font-semibold text-foreground mb-1 flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4" /> Transaction PIN
+        </h2>
+        <p className="text-muted-foreground text-sm mb-4">
+          {hasExistingPin ? "Update your 4-digit PIN used for withdrawals." : "Set a 4-digit PIN to secure your withdrawals."}
+        </p>
+        <form onSubmit={handleUpdatePin} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {hasExistingPin && (
+              <div className="space-y-2">
+                <Label>Current PIN</Label>
+                <Input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={4}
+                  placeholder="••••"
+                  value={pinForm.currentPin}
+                  onChange={(e) => setPinForm({ ...pinForm, currentPin: e.target.value.replace(/\D/g, "").slice(0, 4) })}
+                  className="bg-muted border-border max-w-[140px]"
+                />
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label>New PIN</Label>
+              <Input
+                type="password"
+                inputMode="numeric"
+                maxLength={4}
+                placeholder="••••"
+                value={pinForm.newPin}
+                onChange={(e) => setPinForm({ ...pinForm, newPin: e.target.value.replace(/\D/g, "").slice(0, 4) })}
+                className="bg-muted border-border max-w-[140px]"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Confirm PIN</Label>
+              <Input
+                type="password"
+                inputMode="numeric"
+                maxLength={4}
+                placeholder="••••"
+                value={pinForm.confirmPin}
+                onChange={(e) => setPinForm({ ...pinForm, confirmPin: e.target.value.replace(/\D/g, "").slice(0, 4) })}
+                className="bg-muted border-border max-w-[140px]"
+              />
+            </div>
+          </div>
+          <Button type="submit" variant="secondary" disabled={savingPin}>
+            {savingPin ? "Saving..." : hasExistingPin ? "Update PIN" : "Set PIN"}
+          </Button>
+        </form>
+      </motion.div>
     </div>
   );
 };
