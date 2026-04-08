@@ -1,11 +1,11 @@
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, hashPin } from "@/contexts/AuthContext";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { toast } from "sonner";
-import { User, Mail, Phone, Lock, Camera } from "lucide-react";
+import { User, Mail, Phone, Lock, Camera, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const ProfilePage = () => {
