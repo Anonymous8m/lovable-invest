@@ -1,107 +1,7 @@
-import { useState } from "react";
-import { useAuth, hashPin } from "@/contexts/AuthContext";
-import { useInvestments } from "@/contexts/InvestmentContext";
-import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
-import { ArrowUpFromLine, Wallet, AlertTriangle, Lock } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
-
-const CRYPTO_NETWORKS = [
-  { id: "btc", label: "Bitcoin (BTC)" },
-  { id: "eth", label: "Ethereum (ETH)" },
-  { id: "usdt", label: "USDT (TRC20)" },
-];
+import { ArrowUpFromLine, Clock } from "lucide-react";
 
 const WithdrawPage = () => {
-  const { user, refreshProfile } = useAuth();
-  const { addTransaction } = useInvestments();
-  const { toast } = useToast();
-  const [amount, setAmount] = useState("");
-  const [network, setNetwork] = useState("btc");
-  const [walletAddress, setWalletAddress] = useState("");
-  const [pin, setPin] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const balance = user?.balance ?? 0;
-  const selectedNetwork = CRYPTO_NETWORKS.find((n) => n.id === network)!;
-
-  const handleWithdraw = async () => {
-    const withdrawAmount = parseFloat(amount);
-    if (!withdrawAmount || withdrawAmount <= 0) {
-      toast({ title: "Invalid amount", description: "Please enter a valid withdrawal amount.", variant: "destructive" });
-      return;
-    }
-    if (withdrawAmount > balance) {
-      toast({ title: "Insufficient funds", description: "You don't have enough balance for this withdrawal.", variant: "destructive" });
-      return;
-    }
-    if (withdrawAmount > 50000) {
-      toast({ title: "Limit exceeded", description: "Maximum single withdrawal is $50,000.", variant: "destructive" });
-      return;
-    }
-    if (!walletAddress.trim() || walletAddress.trim().length < 10 || walletAddress.trim().length > 100) {
-      toast({ title: "Invalid address", description: "Please enter a valid wallet address.", variant: "destructive" });
-      return;
-    }
-    if (!/^\d{4}$/.test(pin)) {
-      toast({ title: "Invalid PIN", description: "Please enter your 4-digit transaction PIN.", variant: "destructive" });
-      return;
-    }
-    if (!user) return;
-
-    // Rate limit: max 5 pending withdrawals
-    const { count } = await supabase
-      .from("transactions")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .eq("type", "withdrawal")
-      .eq("status", "pending");
-    if ((count ?? 0) >= 5) {
-      toast({ title: "Too many pending requests", description: "You already have 5 pending withdrawals. Please wait for them to be processed.", variant: "destructive" });
-      return;
-    }
-
-    // Verify PIN
-    const hashedInput = await hashPin(pin);
-    if (user.transaction_pin && hashedInput !== user.transaction_pin) {
-      toast({ title: "Wrong PIN", description: "The transaction PIN you entered is incorrect.", variant: "destructive" });
-      setPin("");
-      return;
-    }
-
-    setLoading(true);
-
-    // Hold balance immediately to prevent double-spending
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({ balance: balance - withdrawAmount })
-      .eq("id", user.id);
-
-    if (updateError) {
-      toast({ title: "Error", description: "Failed to process withdrawal. Try again.", variant: "destructive" });
-      setLoading(false);
-      return;
-    }
-
-    await addTransaction({
-      type: "withdrawal",
-      amount: withdrawAmount,
-      description: `Withdrawal via ${selectedNetwork.label} to ${walletAddress.trim().slice(0, 8)}...`,
-      status: "pending",
-      date: new Date().toISOString().split("T")[0],
-    });
-
-    await refreshProfile();
-    toast({ title: "Withdrawal submitted", description: `$${withdrawAmount.toLocaleString()} withdrawal is pending admin approval.` });
-    setAmount("");
-    setWalletAddress("");
-    setPin("");
-    setLoading(false);
-  };
-
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
@@ -115,112 +15,16 @@ const WithdrawPage = () => {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="card-elevated rounded-xl border border-border p-5 flex items-center gap-4"
+        className="card-elevated rounded-xl border border-border p-8 flex flex-col items-center justify-center text-center space-y-4"
       >
-        <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
-          <Wallet className="w-6 h-6 text-accent" />
+        <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center">
+          <Clock className="w-8 h-8 text-accent" />
         </div>
-        <div>
-          <p className="text-sm text-muted-foreground">Available Balance</p>
-          <p className="text-2xl font-display font-bold text-foreground">
-            ${balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-          </p>
-        </div>
-      </motion.div>
-
-      {balance <= 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-xl border-2 border-accent/40 bg-accent/5 p-4 flex items-start gap-3"
-        >
-          <AlertTriangle className="w-5 h-5 text-accent mt-0.5 shrink-0" />
-          <p className="text-sm text-foreground">Your balance is empty. Please deposit funds before withdrawing.</p>
-        </motion.div>
-      )}
-
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-        className="card-elevated rounded-xl border border-border p-6 space-y-5"
-      >
-        <div className="space-y-2">
-          <Label className="text-sm text-muted-foreground">Select Network</Label>
-          <div className="grid grid-cols-3 gap-2">
-            {CRYPTO_NETWORKS.map((n) => (
-              <button
-                key={n.id}
-                onClick={() => setNetwork(n.id)}
-                className={`rounded-lg border p-3 text-sm font-medium transition-all ${
-                  network === n.id
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border bg-muted/30 text-muted-foreground hover:border-muted-foreground"
-                }`}
-              >
-                {n.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-sm text-muted-foreground">Wallet Address</Label>
-          <Input
-            placeholder="Enter your wallet address"
-            value={walletAddress}
-            onChange={(e) => setWalletAddress(e.target.value)}
-            maxLength={100}
-            className="h-12 font-mono text-sm"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-sm text-muted-foreground">Amount (USD)</Label>
-          <Input
-            type="number"
-            placeholder="Enter amount"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            min={1}
-            max={50000}
-            className="text-lg h-12"
-          />
-          {balance > 0 && (
-            <button
-              onClick={() => setAmount(String(balance))}
-              className="text-xs text-primary hover:underline"
-            >
-              Withdraw all (${balance.toLocaleString()})
-            </button>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-sm text-muted-foreground flex items-center gap-1.5">
-            <Lock className="w-3.5 h-3.5" /> Transaction PIN
-          </Label>
-          <Input
-            type="password"
-            inputMode="numeric"
-            maxLength={4}
-            placeholder="Enter 4-digit PIN"
-            value={pin}
-            onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
-            className="h-12 max-w-[160px]"
-          />
-        </div>
-
-        <Button
-          onClick={handleWithdraw}
-          disabled={loading || balance <= 0}
-          className="w-full h-12 text-base gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
-        >
-          {loading ? "Processing..." : "Submit Withdrawal"}
-        </Button>
-
-        <p className="text-xs text-muted-foreground text-center">
-          Withdrawals are subject to review and may take 1-3 business days to process.
+        <h2 className="text-xl font-display font-semibold text-foreground">
+          Investment Not Matured Yet
+        </h2>
+        <p className="text-muted-foreground text-sm max-w-md">
+          Your investment has not matured yet. Withdrawals are only available once your investment period is complete. Please check back later.
         </p>
       </motion.div>
     </div>
